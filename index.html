@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OrderMaster Pro | نظام إدارة الطلبات</title>
+    <!-- ملفات خارجية -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+<!-- شاشة تسجيل الدخول -->
+<div id="loginOverlay" class="login-overlay">
+    <div class="login-card">
+        <div class="logo-icon"><i class="fas fa-crown"></i></div>
+        <h2>OrderMaster Pro</h2>
+        <p>نظام إدارة الطلبات المتقدم</p>
+        <input type="email" id="loginEmail" placeholder="البريد الإلكتروني">
+        <input type="password" id="loginPassword" placeholder="كلمة المرور">
+        <div id="loginError" class="error-msg"></div>
+        <button class="btn-login" onclick="login()"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</button>
+        <div class="divider">أو</div>
+        <button class="btn-signup" onclick="signup()"><i class="fas fa-user-plus"></i> إنشاء حساب جديد</button>
+    </div>
+</div>
+
+<!-- نافذة ترقية الحساب -->
+<div id="upgradeModal" class="upgrade-modal">
+    <div class="upgrade-card">
+        <h3><i class="fas fa-crown"></i> ترقية الحساب</h3>
+        <div class="upgrade-option"><span>⭐ أسبوع (5$)</span><button onclick="requestUpgrade('week')">اطلب التحويل</button></div>
+        <div class="upgrade-option"><span>⭐⭐ شهر (15$)</span><button onclick="requestUpgrade('month')">اطلب التحويل</button></div>
+        <div class="upgrade-option"><span>⭐⭐⭐ سنة (30$)</span><button onclick="requestUpgrade('year')">اطلب التحويل</button></div>
+        <div class="upgrade-option"><span>👑 أبدية (50$)</span><button onclick="requestUpgrade('forever')">اطلب التحويل</button></div>
+        <div class="upgrade-option premium"><span>💎 عضو مميز (6 دنانير)</span><button onclick="requestUpgrade('premium')">اطلب الترقية</button></div>
+        <button class="close-modal" onclick="closeUpgradeModal()">إغلاق</button>
+    </div>
+</div>
+
+<!-- المحتوى الرئيسي -->
+<div class="container main-content" id="mainContent">
+    <div class="dashboard">
+        <h1><i class="fas fa-crown"></i> OrderMaster Pro</h1>
+        <div class="subtitle">
+            <span><i class="fas fa-chart-line"></i> نظام إدارة الطلبات</span>
+            <span id="userRoleBadge" class="role-badge"><i class="fas fa-user"></i> عضو عادي</span>
+        </div>
+        
+        <div id="alert" class="alert"></div>
+        
+        <div class="user-info">
+            <div class="user-badge">
+                <div class="user-avatar"><i class="fas fa-user"></i></div>
+                <div><h4 id="userNameDisplay">مرحباً بك</h4><p id="userEmailDisplay"></p></div>
+            </div>
+            <div class="user-buttons">
+                <button class="btn-upgrade" onclick="openUpgradeModal()"><i class="fas fa-gem"></i> ترقية</button>
+                <button class="btn-settings" onclick="openSettings()"><i class="fas fa-sliders-h"></i> إعدادات</button>
+                <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
+            </div>
+        </div>
+        
+        <div class="form-section">
+            <h3><i class="fas fa-plus-circle"></i> إضافة طلب جديد</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>اسم العميل (اختياري)</label>
+                    <input type="text" id="customerName" placeholder="اسم العميل">
+                </div>
+                <div class="form-group">
+                    <label>اسم المنتج *</label>
+                    <input type="text" id="productName" placeholder="اسم المنتج">
+                </div>
+                <div class="form-group">
+                    <label>الكمية *</label>
+                    <input type="number" id="quantity" min="1" value="1">
+                </div>
+                <div class="form-group">
+                    <label>السعر الإجمالي *</label>
+                    <input type="number" id="totalPrice" step="0.01" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label>الحالة</label>
+                    <select id="status">
+                        <option value="جديد">جديد</option>
+                        <option value="قيد التنفيذ">قيد التنفيذ</option>
+                        <option value="تم التسليم">تم التسليم</option>
+                        <option value="ملغي">ملغي</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>ملاحظات</label>
+                    <textarea id="notes" rows="1"></textarea>
+                </div>
+            </div>
+            <button id="saveOrderBtn" onclick="addOrder()"><i class="fas fa-save"></i> حفظ الطلب</button>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card"><i class="fas fa-chart-simple"></i><div class="stat-number" id="totalOrders">0</div><div>إجمالي الطلبات</div></div>
+            <div class="stat-card"><i class="fas fa-coins"></i><div class="stat-number" id="totalRevenue">0</div><div>💰 إجمالي الإيرادات</div></div>
+            <div class="stat-card warning"><i class="fas fa-chart-line"></i><div class="stat-number" id="usageCount">0</div><div>الاستخدامات المتبقية</div></div>
+        </div>
+        
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="بحث عن طلب..." onkeyup="filterOrders()">
+        </div>
+        
+        <div class="filter-buttons">
+            <button class="filter-btn active" onclick="setFilter('all',this)">الكل</button>
+            <button class="filter-btn" onclick="setFilter('جديد',this)">جديد</button>
+            <button class="filter-btn" onclick="setFilter('قيد التنفيذ',this)">قيد التنفيذ</button>
+            <button class="filter-btn" onclick="setFilter('تم التسليم',this)">تم التسليم</button>
+            <button class="filter-btn" onclick="setFilter('ملغي',this)">ملغي</button>
+        </div>
+        
+        <div class="orders-table-wrapper">
+            <table>
+                <thead><tr><th>#</th><th>العميل</th><th>المنتج</th><th>الكمية</th><th>السعر</th><th>الحالة</th><th>التاريخ</th><th>إجراءات</th></tr></thead>
+                <tbody id="ordersList"></tbody>
+            </table>
+        </div>
+        
+        <div class="control-buttons">
+            <button id="printAllBtn" class="btn-print-all" onclick="printAllOrders()" style="display:none;"><i class="fas fa-print"></i> طباعة الكل</button>
+            <button onclick="exportToCSV()" class="btn-export"><i class="fas fa-file-excel"></i> تصدير Excel</button>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

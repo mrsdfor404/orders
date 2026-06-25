@@ -1,140 +1,860 @@
 <!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OrderMaster Pro | نظام إدارة الطلبات</title>
-    <!-- ملفات خارجية -->
-    <link rel="stylesheet" href="style.css">
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>قصي موبايل | Qusai Mobile</title>
+  <!-- Tailwind via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome 6 (Free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #f8fafc;
+    }
+    .popup-notice {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 999;
+      max-width: 380px;
+      background: #1e293b;
+      color: #f1f5f9;
+      padding: 1.25rem 1.8rem;
+      border-radius: 2rem 2rem 2rem 0.5rem;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      border-right: 6px solid #fbbf24;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      transform: translateX(120%);
+      animation: slideIn 0.7s ease forwards;
+    }
+    @keyframes slideIn {
+      0% { transform: translateX(120%); opacity: 0; }
+      100% { transform: translateX(0); opacity: 1; }
+    }
+    .popup-notice i { color: #fbbf24; margin-left: 8px; }
+    .close-popup {
+      position: absolute; left: 12px; top: 12px;
+      background: transparent; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer;
+    }
+    .close-popup:hover { color: #f1f5f9; }
+    .product-card {
+      background: white; border-radius: 1.5rem; padding: 1rem 0.75rem 1.25rem;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.02); border: 1px solid #f0f2f5;
+      transition: all 0.2s ease;
+    }
+    .product-card:hover { transform: translateY(-6px); box-shadow: 0 16px 28px -8px rgba(0,0,0,0.06); border-color: #dbeafe; }
+    .section-title {
+      font-weight: 700; font-size: 1.8rem; border-right: 6px solid #3b82f6; padding-right: 1rem; margin-bottom: 2rem; color: #0f172a;
+    }
+    .brand-badge { background: #2563eb; color: white; padding: 0.2rem 1rem; border-radius: 30px; font-size: 0.7rem; }
+    .btn-primary {
+      background: #2563eb; color: white; padding: 0.5rem 1.25rem; border-radius: 40px; font-weight: 500;
+      transition: 0.2s; border: none; cursor: pointer; font-size: 0.9rem; box-shadow: 0 4px 8px rgba(37,99,235,0.2);
+    }
+    .btn-primary:hover { background: #1d4ed8; transform: scale(0.97); }
+    .btn-outline { background: transparent; border: 1px solid #cbd5e1; padding: 0.4rem 1.2rem; border-radius: 40px; font-weight: 500; transition: 0.2s; cursor: pointer; }
+    .btn-outline:hover { background: #f1f5f9; border-color: #94a3b8; }
+    .modal-overlay { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); }
+    .profile-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #e2e8f0; }
+    .profile-img-lg { width: 100px; height: 100px; }
+    .cart-badge { background: #ef4444; color: white; border-radius: 30px; padding: 0.1rem 0.6rem; font-size: 0.7rem; margin-right: 4px; }
+    .admin-table td, .admin-table th { padding: 0.75rem 0.5rem; border-bottom: 1px solid #e2e8f0; }
+    .admin-table tr:hover { background: #f1f5f9; }
+  </style>
 </head>
 <body>
 
-<!-- شاشة تسجيل الدخول -->
-<div id="loginOverlay" class="login-overlay">
-    <div class="login-card">
-        <div class="logo-icon"><i class="fas fa-crown"></i></div>
-        <h2>OrderMaster Pro</h2>
-        <p>نظام إدارة الطلبات المتقدم</p>
-        <input type="email" id="loginEmail" placeholder="البريد الإلكتروني">
-        <input type="password" id="loginPassword" placeholder="كلمة المرور">
-        <div id="loginError" class="error-msg"></div>
-        <button class="btn-login" onclick="login()"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</button>
-        <div class="divider">أو</div>
-        <button class="btn-signup" onclick="signup()"><i class="fas fa-user-plus"></i> إنشاء حساب جديد</button>
-    </div>
-</div>
+  <!-- POPUP NOTIFICATION -->
+  <div id="popupNotice" class="popup-notice">
+    <button class="close-popup" id="closePopupBtn"><i class="fas fa-times"></i></button>
+    <i class="fas fa-truck"></i> ملاحظة: سعر التوصيل يختلف حسب المنطقة لأنه يتم عن طريق شركة شحن خارجية.
+  </div>
 
-<!-- نافذة ترقية الحساب -->
-<div id="upgradeModal" class="upgrade-modal">
-    <div class="upgrade-card">
-        <h3><i class="fas fa-crown"></i> ترقية الحساب</h3>
-        <div class="upgrade-option"><span>⭐ أسبوع (5$)</span><button onclick="requestUpgrade('week')">اطلب التحويل</button></div>
-        <div class="upgrade-option"><span>⭐⭐ شهر (15$)</span><button onclick="requestUpgrade('month')">اطلب التحويل</button></div>
-        <div class="upgrade-option"><span>⭐⭐⭐ سنة (30$)</span><button onclick="requestUpgrade('year')">اطلب التحويل</button></div>
-        <div class="upgrade-option"><span>👑 أبدية (50$)</span><button onclick="requestUpgrade('forever')">اطلب التحويل</button></div>
-        <div class="upgrade-option premium"><span>💎 عضو مميز (6 دنانير)</span><button onclick="requestUpgrade('premium')">اطلب الترقية</button></div>
-        <button class="close-modal" onclick="closeUpgradeModal()">إغلاق</button>
+  <!-- NAVBAR -->
+  <nav class="bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-100 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl font-bold text-blue-700">قصي موبايل</span>
+          <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">Qusai</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <button id="cartBtn" class="relative text-gray-700 hover:text-blue-600 text-xl">
+            <i class="fas fa-shopping-cart"></i>
+            <span id="cartCount" class="cart-badge absolute -top-2 -right-3">0</span>
+          </button>
+          <button id="authToggleBtn" class="btn-primary text-sm px-4 py-1.5"><i class="fas fa-user-circle ml-1"></i> دخول</button>
+        </div>
+      </div>
     </div>
-</div>
+  </nav>
 
-<!-- المحتوى الرئيسي -->
-<div class="container main-content" id="mainContent">
-    <div class="dashboard">
-        <h1><i class="fas fa-crown"></i> OrderMaster Pro</h1>
-        <div class="subtitle">
-            <span><i class="fas fa-chart-line"></i> نظام إدارة الطلبات</span>
-            <span id="userRoleBadge" class="role-badge"><i class="fas fa-user"></i> عضو عادي</span>
-        </div>
-        
-        <div id="alert" class="alert"></div>
-        
-        <div class="user-info">
-            <div class="user-badge">
-                <div class="user-avatar"><i class="fas fa-user"></i></div>
-                <div><h4 id="userNameDisplay">مرحباً بك</h4><p id="userEmailDisplay"></p></div>
-            </div>
-            <div class="user-buttons">
-                <button class="btn-upgrade" onclick="openUpgradeModal()"><i class="fas fa-gem"></i> ترقية</button>
-                <button class="btn-settings" onclick="openSettings()"><i class="fas fa-sliders-h"></i> إعدادات</button>
-                <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
-            </div>
-        </div>
-        
-        <div class="form-section">
-            <h3><i class="fas fa-plus-circle"></i> إضافة طلب جديد</h3>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>اسم العميل (اختياري)</label>
-                    <input type="text" id="customerName" placeholder="اسم العميل">
-                </div>
-                <div class="form-group">
-                    <label>اسم المنتج *</label>
-                    <input type="text" id="productName" placeholder="اسم المنتج">
-                </div>
-                <div class="form-group">
-                    <label>الكمية *</label>
-                    <input type="number" id="quantity" min="1" value="1">
-                </div>
-                <div class="form-group">
-                    <label>السعر الإجمالي *</label>
-                    <input type="number" id="totalPrice" step="0.01" placeholder="0.00">
-                </div>
-                <div class="form-group">
-                    <label>الحالة</label>
-                    <select id="status">
-                        <option value="جديد">جديد</option>
-                        <option value="قيد التنفيذ">قيد التنفيذ</option>
-                        <option value="تم التسليم">تم التسليم</option>
-                        <option value="ملغي">ملغي</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>ملاحظات</label>
-                    <textarea id="notes" rows="1"></textarea>
-                </div>
-            </div>
-            <button id="saveOrderBtn" onclick="addOrder()"><i class="fas fa-save"></i> حفظ الطلب</button>
-        </div>
-        
-        <div class="stats">
-            <div class="stat-card"><i class="fas fa-chart-simple"></i><div class="stat-number" id="totalOrders">0</div><div>إجمالي الطلبات</div></div>
-            <div class="stat-card"><i class="fas fa-coins"></i><div class="stat-number" id="totalRevenue">0</div><div>💰 إجمالي الإيرادات</div></div>
-            <div class="stat-card warning"><i class="fas fa-chart-line"></i><div class="stat-number" id="usageCount">0</div><div>الاستخدامات المتبقية</div></div>
-        </div>
-        
-        <div class="search-box">
-            <i class="fas fa-search"></i>
-            <input type="text" id="searchInput" placeholder="بحث عن طلب..." onkeyup="filterOrders()">
-        </div>
-        
-        <div class="filter-buttons">
-            <button class="filter-btn active" onclick="setFilter('all',this)">الكل</button>
-            <button class="filter-btn" onclick="setFilter('جديد',this)">جديد</button>
-            <button class="filter-btn" onclick="setFilter('قيد التنفيذ',this)">قيد التنفيذ</button>
-            <button class="filter-btn" onclick="setFilter('تم التسليم',this)">تم التسليم</button>
-            <button class="filter-btn" onclick="setFilter('ملغي',this)">ملغي</button>
-        </div>
-        
-        <div class="orders-table-wrapper">
-            <table>
-                <thead><tr><th>#</th><th>العميل</th><th>المنتج</th><th>الكمية</th><th>السعر</th><th>الحالة</th><th>التاريخ</th><th>إجراءات</th></tr></thead>
-                <tbody id="ordersList"></tbody>
-            </table>
-        </div>
-        
-        <div class="control-buttons">
-            <button id="printAllBtn" class="btn-print-all" onclick="printAllOrders()" style="display:none;"><i class="fas fa-print"></i> طباعة الكل</button>
-            <button onclick="exportToCSV()" class="btn-export"><i class="fas fa-file-excel"></i> تصدير Excel</button>
-        </div>
+  <!-- MAIN -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- HERO -->
+    <div class="bg-gradient-to-l from-blue-50 to-indigo-50 rounded-3xl p-8 mb-12 shadow-sm border border-blue-100">
+      <h1 class="text-3xl md:text-4xl font-extrabold text-gray-800">📱 قصي موبايل – أحدث الهواتف والإكسسوارات</h1>
+      <p class="text-gray-600 mt-2 text-lg">أفضل الأسعار في الأردن مع ضمان الجودة</p>
     </div>
-</div>
 
-<script src="script.js"></script>
+    <!-- AUTH MODAL -->
+    <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center modal-overlay hidden">
+      <div class="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl relative mx-4 max-h-[90vh] overflow-y-auto">
+        <button id="closeAuthModal" class="absolute left-4 top-4 text-gray-400 hover:text-gray-700 text-xl"><i class="fas fa-times"></i></button>
+        <div class="text-center mb-6">
+          <h3 class="text-2xl font-bold text-gray-800" id="authModalTitle">تسجيل الدخول</h3>
+          <p class="text-sm text-gray-500" id="authModalSub">أدخل بياناتك للوصول إلى حسابك</p>
+        </div>
+        <!-- login -->
+        <form id="loginForm">
+          <div class="mb-4">
+            <label class="block text-gray-700 text-sm mb-1">البريد الإلكتروني</label>
+            <input type="email" id="loginEmail" class="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-300 outline-none" placeholder="example@mail.com" value="test@test.com">
+          </div>
+          <div class="mb-4">
+            <label class="block text-gray-700 text-sm mb-1">كلمة المرور</label>
+            <input type="password" id="loginPassword" class="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-300 outline-none" placeholder="••••••••" value="123456">
+          </div>
+          <button type="submit" class="w-full btn-primary py-2.5 text-base"><i class="fas fa-sign-in-alt ml-2"></i> دخول</button>
+        </form>
+        <div class="mt-4 text-center">
+          <span class="text-sm text-gray-500">ليس لديك حساب؟</span>
+          <button id="showRegisterBtn" class="text-blue-600 font-semibold mr-1">إنشاء حساب</button>
+        </div>
+        <!-- register -->
+        <div id="registerFormContainer" class="hidden mt-4 border-t pt-4">
+          <h4 class="text-lg font-bold text-gray-700 mb-2">إنشاء حساب جديد</h4>
+          <form id="registerForm">
+            <div class="mb-3">
+              <label class="block text-sm text-gray-700">الاسم</label>
+              <input type="text" id="regName" class="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-300 outline-none" placeholder="أحمد" value="مستخدم جديد">
+            </div>
+            <div class="mb-3">
+              <label class="block text-sm text-gray-700">البريد الإلكتروني</label>
+              <input type="email" id="regEmail" class="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-300 outline-none" placeholder="new@mail.com" value="newuser@test.com">
+            </div>
+            <div class="mb-3">
+              <label class="block text-sm text-gray-700">كلمة المرور</label>
+              <input type="password" id="regPassword" class="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-300 outline-none" placeholder="••••••••" value="123456">
+            </div>
+            <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-xl font-medium"><i class="fas fa-user-plus ml-2"></i> إنشاء حساب</button>
+          </form>
+          <button id="showLoginBtn" class="mt-2 text-sm text-blue-600">→ العودة لتسجيل الدخول</button>
+        </div>
+        <!-- profile -->
+        <div id="profileSection" class="hidden mt-4 border-t pt-4">
+          <div class="flex items-center gap-4 mb-3">
+            <img id="profileImage" src="https://ui-avatars.com/api/?name=User&background=2563eb&color=fff&size=80" alt="profile" class="profile-img profile-img-lg">
+            <div>
+              <h4 class="font-bold text-gray-800" id="profileName">مستخدم</h4>
+              <p class="text-sm text-gray-500" id="profileEmail">user@mail.com</p>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2 mb-3">
+            <button id="changePicBtn" class="btn-outline text-sm"><i class="fas fa-camera"></i> تغيير الصورة</button>
+            <button id="editPasswordBtn" class="btn-outline text-sm"><i class="fas fa-key"></i> تعديل كلمة السر</button>
+          </div>
+          <div id="passwordEditArea" class="hidden mt-2 bg-gray-50 p-3 rounded-xl">
+            <input type="password" id="newPasswordInput" class="w-full border border-gray-300 rounded-xl px-3 py-1.5 text-sm" placeholder="كلمة سر جديدة">
+            <button id="savePasswordBtn" class="mt-2 btn-primary text-sm py-1 px-4">حفظ</button>
+          </div>
+          <div class="mt-3">
+            <h5 class="font-semibold text-gray-700">📦 طلباتي المحفوظة</h5>
+            <ul id="ordersList" class="text-sm text-gray-600 list-disc list-inside">
+              <li>لا توجد طلبات</li>
+            </ul>
+          </div>
+          <button id="logoutBtn" class="mt-3 text-red-500 text-sm border border-red-200 px-4 py-1 rounded-full hover:bg-red-50"><i class="fas fa-sign-out-alt"></i> تسجيل خروج</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CART MODAL -->
+    <div id="cartModal" class="fixed inset-0 z-50 flex items-center justify-center modal-overlay hidden">
+      <div class="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl relative mx-4">
+        <button id="closeCartModal" class="absolute left-4 top-4 text-gray-400 hover:text-gray-700 text-xl"><i class="fas fa-times"></i></button>
+        <h3 class="text-xl font-bold mb-4">🛒 سلة التسوق</h3>
+        <div id="cartItems" class="max-h-64 overflow-y-auto space-y-2 text-sm"></div>
+        <div class="border-t pt-3 mt-3 flex justify-between font-bold">
+          <span>المجموع:</span>
+          <span id="cartTotal">0 JOD</span>
+        </div>
+        <button id="checkoutBtn" class="w-full mt-4 btn-primary py-2.5 text-base">إتمام الشراء</button>
+        <p class="text-xs text-gray-400 mt-2 text-center">(تسجيل الدخول مطلوب)</p>
+      </div>
+    </div>
+
+    <!-- CHECKOUT MODAL -->
+    <div id="checkoutModal" class="fixed inset-0 z-50 flex items-center justify-center modal-overlay hidden">
+      <div class="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl relative mx-4 max-h-[90vh] overflow-y-auto">
+        <button id="closeCheckoutModal" class="absolute left-4 top-4 text-gray-400 hover:text-gray-700 text-xl"><i class="fas fa-times"></i></button>
+        <h3 class="text-xl font-bold mb-4">📋 تفاصيل الطلب</h3>
+        <form id="checkoutForm">
+          <div class="mb-3"><label class="block text-sm">الاسم</label><input type="text" id="deliveryName" class="w-full border rounded-xl px-4 py-2" required></div>
+          <div class="mb-3"><label class="block text-sm">رقم الهاتف</label><input type="tel" id="deliveryPhone" class="w-full border rounded-xl px-4 py-2" required></div>
+          <div class="mb-3"><label class="block text-sm">العنوان</label><input type="text" id="deliveryAddress" class="w-full border rounded-xl px-4 py-2" required></div>
+          <div class="mb-3"><label class="block text-sm">المنطقة</label><input type="text" id="deliveryRegion" class="w-full border rounded-xl px-4 py-2" required></div>
+          <div class="mb-4"><label class="block text-sm">إيصال الدفع (صورة)</label><input type="file" id="receiptFile" accept="image/*" class="w-full border rounded-xl px-3 py-2" required></div>
+          <button type="submit" class="w-full btn-primary py-2.5 text-base"><i class="fas fa-cloud-upload-alt ml-2"></i> تأكيد الطلب</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ADMIN DASHBOARD -->
+    <div id="adminPanel" class="hidden mt-8 bg-white rounded-3xl p-6 shadow-md border border-gray-200">
+      <h2 class="text-2xl font-bold text-gray-800 mb-4"><i class="fas fa-user-shield text-blue-600"></i> لوحة تحكم المدير</h2>
+      <div class="overflow-x-auto">
+        <table class="admin-table w-full text-sm">
+          <thead class="bg-gray-100"><tr><th>#</th><th>العميل</th><th>الهاتف</th><th>العنوان</th><th>المنطقة</th><th>الطلب</th><th>المجموع</th><th>الإيصال</th><th>الحالة</th><th>إجراء</th></tr></thead>
+          <tbody id="adminOrdersBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PRODUCT SECTIONS -->
+    <section class="mb-16">
+      <h2 class="section-title">✨ إكسسوارات WiWU</h2>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5" id="wiwuGrid"></div>
+    </section>
+
+    <section class="mb-16">
+      <h2 class="section-title">📱 هواتف قصي موبايل</h2>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5" id="phoneGrid"></div>
+    </section>
+
+  </main>
+
+  <footer class="bg-white border-t border-gray-200 py-6 text-center text-sm text-gray-500">
+    <p>© 2026 قصي موبايل – جميع الحقوق محفوظة</p>
+  </footer>
+
+  <script>
+    (function() {
+      "use strict";
+
+      // ============================================
+      // LOCAL STORAGE AUTH SYSTEM (FULLY WORKING)
+      // ============================================
+      const USERS_KEY = 'qusai_users';
+      const CURRENT_USER_KEY = 'qusai_current_user';
+
+      // Get all users from localStorage
+      function getUsers() {
+        try {
+          return JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+        } catch { return []; }
+      }
+
+      // Save users to localStorage
+      function saveUsers(users) {
+        localStorage.setItem(USERS_KEY, JSON.stringify(users));
+      }
+
+      // Find a user by email
+      function findUserByEmail(email) {
+        const users = getUsers();
+        return users.find(u => u.email.toLowerCase() === email.toLowerCase()) || null;
+      }
+
+      // Register a new user
+      function registerUser(name, email, password) {
+        const users = getUsers();
+        if (findUserByEmail(email)) {
+          alert('⚠️ عذراً، هذا البريد الإلكتروني مسجل بالفعل.');
+          return false;
+        }
+        const newUser = {
+          name: name.trim() || 'مستخدم',
+          email: email.trim(),
+          password: password,
+          photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'User')}&background=2563eb&color=fff&size=80`,
+          orders: [],
+          createdAt: new Date().toISOString()
+        };
+        users.push(newUser);
+        saveUsers(users);
+        // Auto-login after registration
+        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(newUser));
+        alert('✅ تم إنشاء الحساب بنجاح!');
+        return true;
+      }
+
+      // Login user
+      function loginUser(email, password) {
+        const user = findUserByEmail(email);
+        if (!user) {
+          alert('❌ عذراً، الحساب غير موجود. يرجى إنشاء حساب أولاً.');
+          return false;
+        }
+        if (user.password !== password) {
+          alert('❌ كلمة المرور غير صحيحة.');
+          return false;
+        }
+        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+        alert('✅ تم تسجيل الدخول بنجاح!');
+        return true;
+      }
+
+      // Get current logged-in user
+      function getCurrentUser() {
+        try {
+          return JSON.parse(localStorage.getItem(CURRENT_USER_KEY));
+        } catch { return null; }
+      }
+
+      // Update current user data
+      function updateCurrentUser(updatedUser) {
+        const users = getUsers();
+        const idx = users.findIndex(u => u.email === updatedUser.email);
+        if (idx !== -1) {
+          users[idx] = updatedUser;
+          saveUsers(users);
+        }
+        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
+        return updatedUser;
+      }
+
+      // Logout user
+      function logoutUser() {
+        localStorage.removeItem(CURRENT_USER_KEY);
+        alert('✅ تم تسجيل الخروج بنجاح');
+      }
+
+      // ============================================
+      // PRODUCT DATA
+      // ============================================
+      const wiwuProducts = [
+        { id: 'w1', name: 'سماعة بلوتوث TWS', price: 29, img: 'https://placehold.co/300x300/eee/bbb?text=WiWU+TWS' },
+        { id: 'w2', name: 'شاحن سريع 65W', price: 18, img: 'https://placehold.co/300x300/eee/bbb?text=WiWU+Charger' },
+        { id: 'w3', name: 'جراب حماية سيليكون', price: 12, img: 'https://placehold.co/300x300/eee/bbb?text=WiWU+Case' },
+        { id: 'w4', name: 'كابل USB-C 2M', price: 9, img: 'https://placehold.co/300x300/eee/bbb?text=WiWU+Cable' },
+        { id: 'w5', name: 'حامل هاتف سيارة', price: 22, img: 'https://placehold.co/300x300/eee/bbb?text=WiWU+Holder' },
+        { id: 'w6', name: 'سماعة أذن لاسلكية', price: 35, img: 'https://placehold.co/300x300/eee/bbb?text=WiWU+Earbuds' },
+        { id: 'w7', name: 'باور بانك 10000mAh', price: 27, img: 'https://placehold.co/300x300/eee/bbb?text=WiWU+Power' },
+        { id: 'w8', name: 'عدسة تصوير واسعة', price: 16, img: 'https://placehold.co/300x300/eee/bbb?text=WiWU+Lens' },
+      ];
+
+      const phoneData = [
+        { id: 'p1', name: 'HONOR Magic V5 512GB', price: 1301, brand: 'HONOR' },
+        { id: 'p2', name: 'HONOR Magic 8 Pro 512GB', price: 801, brand: 'HONOR' },
+        { id: 'p3', name: 'HONOR Magic 7 Pro 512GB', price: 751, brand: 'HONOR' },
+        { id: 'p4', name: 'HONOR 400 PRO 512GB', price: 461, brand: 'HONOR' },
+        { id: 'p5', name: 'HONOR 400 12-512GB', price: 301, brand: 'HONOR' },
+        { id: 'p6', name: 'HONOR 400 12-256GB', price: 271, brand: 'HONOR' },
+        { id: 'p7', name: 'HONOR X9d 12-256GB', price: 281, brand: 'HONOR' },
+        { id: 'p8', name: 'HONOR X9d 8-256GB', price: 251, brand: 'HONOR' },
+        { id: 'p9', name: 'HONOR X9c 12-256GB', price: 241, brand: 'HONOR' },
+        { id: 'p10', name: 'HONOR 600 Lite 8-256GB', price: 241, brand: 'HONOR' },
+        { id: 'p11', name: 'HONOR 400 Lite 5G', price: 171, brand: 'HONOR' },
+        { id: 'p12', name: 'HONOR X8d 8-512GB', price: 201, brand: 'HONOR' },
+        { id: 'p13', name: 'HONOR X8d 8-256GB', price: 191, brand: 'HONOR' },
+        { id: 'p14', name: 'HONOR X8c 8-512GB', price: 171, brand: 'HONOR' },
+        { id: 'p15', name: 'HONOR X8c 8-256GB', price: 151, brand: 'HONOR' },
+        { id: 'p16', name: 'HONOR X7d 5G', price: 146, brand: 'HONOR' },
+        { id: 'p17', name: 'HONOR X7d 4G', price: 131, brand: 'HONOR' },
+        { id: 'p18', name: 'HONOR X6c 6-256GB', price: 97, brand: 'HONOR' },
+        { id: 'p19', name: 'HONOR X6c 6-128GB', price: 87, brand: 'HONOR' },
+        { id: 'p20', name: 'Samsung A07 4-64GB', price: 72, brand: 'SAMSUNG' },
+        { id: 'p21', name: 'Samsung A07 4-128GB', price: 82, brand: 'SAMSUNG' },
+        { id: 'p22', name: 'Samsung A07 6-128GB', price: 92, brand: 'SAMSUNG' },
+        { id: 'p23', name: 'Samsung A16 4-128GB', price: 101, brand: 'SAMSUNG' },
+        { id: 'p24', name: 'Samsung A16 6-128GB', price: 122, brand: 'SAMSUNG' },
+        { id: 'p25', name: 'Samsung A16 8-256GB', price: 147, brand: 'SAMSUNG' },
+        { id: 'p26', name: 'Samsung A17 4-128GB', price: 117, brand: 'SAMSUNG' },
+        { id: 'p27', name: 'Samsung A17 6-128GB', price: 142, brand: 'SAMSUNG' },
+        { id: 'p28', name: 'Samsung A17 8-256GB', price: 182, brand: 'SAMSUNG' },
+        { id: 'p29', name: 'Samsung A26 6-128GB', price: 157, brand: 'SAMSUNG' },
+        { id: 'p30', name: 'Samsung A26 8-256GB', price: 201, brand: 'SAMSUNG' },
+        { id: 'p31', name: 'Samsung A36 8-128GB', price: 222, brand: 'SAMSUNG' },
+        { id: 'p32', name: 'Samsung A36 8-256GB', price: 272, brand: 'SAMSUNG' },
+        { id: 'p33', name: 'Samsung A37 8-128GB', price: 262, brand: 'SAMSUNG' },
+        { id: 'p34', name: 'Samsung A37 8-256GB', price: 302, brand: 'SAMSUNG' },
+        { id: 'p35', name: 'Samsung A37 12-256GB', price: 327, brand: 'SAMSUNG' },
+        { id: 'p36', name: 'Samsung A56 8-128GB', price: 272, brand: 'SAMSUNG' },
+        { id: 'p37', name: 'Samsung A56 8-256GB', price: 302, brand: 'SAMSUNG' },
+        { id: 'p38', name: 'Samsung A56 12-256GB', price: 342, brand: 'SAMSUNG' },
+        { id: 'p39', name: 'Samsung A57 8-256GB', price: 342, brand: 'SAMSUNG' },
+        { id: 'p40', name: 'Samsung A57 12-256GB', price: 377, brand: 'SAMSUNG' },
+        { id: 'p41', name: 'Samsung A57 12-512GB', price: 452, brand: 'SAMSUNG' },
+        { id: 'p42', name: 'Samsung S25 ULTRA 12-256GB', price: 762, brand: 'SAMSUNG' },
+        { id: 'p43', name: 'Samsung S26 ULTRA 12-256GB', price: 971, brand: 'SAMSUNG' },
+        { id: 'p44', name: 'Samsung S26 ULTRA 16-1024GB', price: 1452, brand: 'SAMSUNG' },
+      ];
+
+      // ============================================
+      // STATE
+      // ============================================
+      let cart = [];
+      let currentUser = getCurrentUser();
+
+      // DOM refs
+      const popup = document.getElementById('popupNotice');
+      const closePopup = document.getElementById('closePopupBtn');
+      const authModal = document.getElementById('authModal');
+      const authToggleBtn = document.getElementById('authToggleBtn');
+      const closeAuthModal = document.getElementById('closeAuthModal');
+      const loginForm = document.getElementById('loginForm');
+      const registerForm = document.getElementById('registerForm');
+      const showRegisterBtn = document.getElementById('showRegisterBtn');
+      const showLoginBtn = document.getElementById('showLoginBtn');
+      const registerContainer = document.getElementById('registerFormContainer');
+      const profileSection = document.getElementById('profileSection');
+      const profileName = document.getElementById('profileName');
+      const profileEmail = document.getElementById('profileEmail');
+      const profileImage = document.getElementById('profileImage');
+      const ordersList = document.getElementById('ordersList');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const changePicBtn = document.getElementById('changePicBtn');
+      const editPasswordBtn = document.getElementById('editPasswordBtn');
+      const passwordEditArea = document.getElementById('passwordEditArea');
+      const newPasswordInput = document.getElementById('newPasswordInput');
+      const savePasswordBtn = document.getElementById('savePasswordBtn');
+      const cartBtn = document.getElementById('cartBtn');
+      const cartModal = document.getElementById('cartModal');
+      const closeCartModal = document.getElementById('closeCartModal');
+      const cartItems = document.getElementById('cartItems');
+      const cartTotal = document.getElementById('cartTotal');
+      const cartCount = document.getElementById('cartCount');
+      const checkoutBtn = document.getElementById('checkoutBtn');
+      const checkoutModal = document.getElementById('checkoutModal');
+      const closeCheckoutModal = document.getElementById('closeCheckoutModal');
+      const checkoutForm = document.getElementById('checkoutForm');
+      const adminPanel = document.getElementById('adminPanel');
+      const adminOrdersBody = document.getElementById('adminOrdersBody');
+      const authModalTitle = document.getElementById('authModalTitle');
+      const authModalSub = document.getElementById('authModalSub');
+
+      // ============================================
+      // RENDER PRODUCTS
+      // ============================================
+      function renderProducts() {
+        const wiwuGrid = document.getElementById('wiwuGrid');
+        wiwuGrid.innerHTML = wiwuProducts.map(p => `
+          <div class="product-card text-center">
+            <img src="${p.img}" alt="${p.name}" class="w-full h-36 object-contain rounded-xl mb-2 bg-gray-50">
+            <h4 class="font-semibold text-sm">${p.name}</h4>
+            <p class="text-blue-700 font-bold mt-1">${p.price} JOD</p>
+            <button class="btn-primary text-xs mt-2 w-full py-1.5 add-to-cart" data-id="${p.id}" data-name="${p.name}" data-price="${p.price}"><i class="fas fa-cart-plus ml-1"></i> أضف للسلة</button>
+          </div>
+        `).join('');
+
+        const phoneGrid = document.getElementById('phoneGrid');
+        phoneGrid.innerHTML = phoneData.map(p => `
+          <div class="product-card text-center">
+            <div class="flex justify-between items-start mb-1"><span class="brand-badge text-[10px]">${p.brand}</span></div>
+            <img src="https://placehold.co/300x300/eef2ff/2563eb?text=${p.brand}" alt="${p.name}" class="w-full h-32 object-contain rounded-xl bg-gray-50">
+            <h4 class="font-semibold text-sm mt-1">${p.name}</h4>
+            <p class="text-blue-700 font-bold">${p.price} JOD</p>
+            <button class="btn-primary text-xs mt-1 w-full py-1.5 add-to-cart" data-id="${p.id}" data-name="${p.name}" data-price="${p.price}"><i class="fas fa-cart-plus ml-1"></i> أضف للسلة</button>
+          </div>
+        `).join('');
+
+        document.querySelectorAll('.add-to-cart').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const id = this.dataset.id, name = this.dataset.name, price = parseFloat(this.dataset.price);
+            addToCart(id, name, price);
+          });
+        });
+      }
+
+      // ============================================
+      // CART FUNCTIONS
+      // ============================================
+      function addToCart(id, name, price) {
+        const existing = cart.find(item => item.id === id);
+        if (existing) existing.qty += 1;
+        else cart.push({ id, name, price, qty: 1 });
+        updateCartUI();
+        // Visual feedback
+        const btn = document.querySelector(`[data-id="${id}"]`);
+        if (btn) {
+          const originalText = btn.innerHTML;
+          btn.innerHTML = '✓ تم الإضافة';
+          btn.style.background = '#22c55e';
+          setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.style.background = '';
+          }, 1200);
+        }
+      }
+
+      function updateCartUI() {
+        const totalItems = cart.reduce((acc, i) => acc + i.qty, 0);
+        cartCount.innerText = totalItems;
+        const totalPrice = cart.reduce((acc, i) => acc + i.price * i.qty, 0);
+        cartTotal.innerText = totalPrice.toFixed(2) + ' JOD';
+        if (cart.length === 0) cartItems.innerHTML = '<p class="text-gray-400">السلة فارغة</p>';
+        else {
+          cartItems.innerHTML = cart.map(item => `
+            <div class="flex justify-between items-center border-b py-1">
+              <span>${item.name} <span class="text-xs text-gray-400">x${item.qty}</span></span>
+              <span>${(item.price * item.qty).toFixed(2)} JOD</span>
+            </div>
+          `).join('');
+        }
+      }
+
+      // ============================================
+      // AUTH UI HELPERS
+      // ============================================
+      function updateAuthUI(user) {
+        if (user) {
+          currentUser = user;
+          authToggleBtn.innerHTML = `<i class="fas fa-user-circle ml-1"></i> ${user.name || 'مستخدم'}`;
+          profileName.innerText = user.name || 'مستخدم';
+          profileEmail.innerText = user.email;
+          profileImage.src = user.photoURL || 'https://ui-avatars.com/api/?name=User&background=2563eb&color=fff&size=80';
+          
+          // Hide login/register, show profile
+          document.querySelector('#authModal form#loginForm').classList.add('hidden');
+          document.querySelector('#authModal #registerFormContainer').classList.add('hidden');
+          profileSection.classList.remove('hidden');
+          document.querySelector('#authModal .text-center .text-sm.text-gray-500').style.display = 'none';
+          
+          // Load orders
+          loadUserOrders(user);
+          
+          // Admin check
+          if (user.email === 'admin@qusai.com') {
+            adminPanel.classList.remove('hidden');
+            loadAdminOrders();
+          } else {
+            adminPanel.classList.add('hidden');
+          }
+        } else {
+          currentUser = null;
+          authToggleBtn.innerHTML = `<i class="fas fa-user-circle ml-1"></i> دخول`;
+          profileSection.classList.add('hidden');
+          document.querySelector('#authModal form#loginForm').classList.remove('hidden');
+          document.querySelector('#authModal #registerFormContainer').classList.add('hidden');
+          document.querySelector('#authModal .text-center .text-sm.text-gray-500').style.display = 'block';
+          adminPanel.classList.add('hidden');
+        }
+      }
+
+      function loadUserOrders(user) {
+        const orders = user.orders || [];
+        if (orders.length === 0) ordersList.innerHTML = '<li>لا توجد طلبات</li>';
+        else {
+          ordersList.innerHTML = orders.map((o, i) => 
+            `<li>📱 طلب #${i+1} - ${o.total} JOD - ${o.status || 'قيد الانتظار'}</li>`
+          ).join('');
+        }
+      }
+
+      // ============================================
+      // ADMIN FUNCTIONS (LocalStorage based)
+      // ============================================
+      function loadAdminOrders() {
+        const users = getUsers();
+        let allOrders = [];
+        users.forEach(u => {
+          if (u.orders && u.orders.length > 0) {
+            u.orders.forEach((o, idx) => {
+              allOrders.push({ 
+                ...o, 
+                userName: u.name, 
+                userEmail: u.email,
+                orderIndex: idx,
+                userObj: u
+              });
+            });
+          }
+        });
+        
+        if (allOrders.length === 0) {
+          adminOrdersBody.innerHTML = '<tr><td colspan="10" class="text-center text-gray-400 py-4">لا توجد طلبات حالياً</td></tr>';
+          return;
+        }
+        
+        adminOrdersBody.innerHTML = allOrders.map((o, idx) => `
+          <tr>
+            <td>${idx+1}</td>
+            <td>${o.userName || '—'}</td>
+            <td>${o.phone || '—'}</td>
+            <td>${o.address || '—'}</td>
+            <td>${o.region || '—'}</td>
+            <td>${o.items ? o.items.map(i => i.name).join(', ') : '—'}</td>
+            <td>${o.total || 0} JOD</td>
+            <td><a href="${o.receiptUrl || '#'}" target="_blank" class="text-blue-600 underline">عرض</a></td>
+            <td><span class="px-2 py-1 rounded-full text-xs ${o.status === 'مقبول' ? 'bg-green-100 text-green-800' : o.status === 'مرفوض' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}">${o.status || 'قيد الانتظار'}</span></td>
+            <td>
+              <button class="admin-accept bg-green-500 text-white px-2 py-1 rounded text-xs mx-1" data-email="${o.userEmail}" data-idx="${o.orderIndex}">قبول</button>
+              <button class="admin-reject bg-red-500 text-white px-2 py-1 rounded text-xs mx-1" data-email="${o.userEmail}" data-idx="${o.orderIndex}">رفض</button>
+            </td>
+          </tr>
+        `).join('');
+
+        // Accept/Reject handlers
+        document.querySelectorAll('.admin-accept').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const email = this.dataset.email;
+            const idx = parseInt(this.dataset.idx);
+            const users = getUsers();
+            const user = users.find(u => u.email === email);
+            if (user && user.orders && user.orders[idx]) {
+              user.orders[idx].status = 'مقبول';
+              saveUsers(users);
+              if (currentUser && currentUser.email === email) {
+                updateCurrentUser(user);
+              }
+              loadAdminOrders();
+              if (currentUser && currentUser.email === email) loadUserOrders(currentUser);
+              alert('✅ تم قبول الطلب');
+            }
+          });
+        });
+        
+        document.querySelectorAll('.admin-reject').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const email = this.dataset.email;
+            const idx = parseInt(this.dataset.idx);
+            const users = getUsers();
+            const user = users.find(u => u.email === email);
+            if (user && user.orders && user.orders[idx]) {
+              user.orders[idx].status = 'مرفوض';
+              saveUsers(users);
+              if (currentUser && currentUser.email === email) {
+                updateCurrentUser(user);
+              }
+              loadAdminOrders();
+              if (currentUser && currentUser.email === email) loadUserOrders(currentUser);
+              alert('❌ تم رفض الطلب');
+            }
+          });
+        });
+      }
+
+      // ============================================
+      // EVENT LISTENERS
+      // ============================================
+      
+      // Login
+      loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value.trim();
+        const pass = document.getElementById('loginPassword').value.trim();
+        if (!email || !pass) {
+          alert('⚠️ يرجى ملء جميع الحقول');
+          return;
+        }
+        if (loginUser(email, pass)) {
+          const user = findUserByEmail(email);
+          updateAuthUI(user);
+          authModal.classList.add('hidden');
+        }
+      });
+
+      // Register
+      registerForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('regName').value.trim() || 'مستخدم';
+        const email = document.getElementById('regEmail').value.trim();
+        const pass = document.getElementById('regPassword').value.trim();
+        if (!email || !pass) {
+          alert('⚠️ يرجى ملء جميع الحقول');
+          return;
+        }
+        if (registerUser(name, email, pass)) {
+          const user = findUserByEmail(email);
+          updateAuthUI(user);
+          authModal.classList.add('hidden');
+        }
+      });
+
+      // Logout
+      logoutBtn.addEventListener('click', () => {
+        logoutUser();
+        updateAuthUI(null);
+        authModal.classList.add('hidden');
+      });
+
+      // Change profile picture
+      changePicBtn.addEventListener('click', () => {
+        if (!currentUser) return;
+        const url = prompt('📸 أدخل رابط الصورة الجديدة (URL):', currentUser.photoURL || '');
+        if (url) {
+          currentUser.photoURL = url;
+          updateCurrentUser(currentUser);
+          profileImage.src = url;
+          alert('✅ تم تحديث الصورة بنجاح');
+        }
+      });
+
+      // Edit password
+      editPasswordBtn.addEventListener('click', () => {
+        passwordEditArea.classList.toggle('hidden');
+      });
+      
+      savePasswordBtn.addEventListener('click', () => {
+        const newPass = newPasswordInput.value.trim();
+        if (newPass && currentUser) {
+          currentUser.password = newPass;
+          updateCurrentUser(currentUser);
+          alert('✅ تم تحديث كلمة السر بنجاح');
+          passwordEditArea.classList.add('hidden');
+          newPasswordInput.value = '';
+        } else {
+          alert('⚠️ يرجى إدخال كلمة سر جديدة');
+        }
+      });
+
+      // Cart
+      checkoutBtn.addEventListener('click', () => {
+        if (!currentUser) { 
+          alert('⚠️ يرجى تسجيل الدخول أولاً'); 
+          authModal.classList.remove('hidden'); 
+          return; 
+        }
+        if (cart.length === 0) { 
+          alert('⚠️ السلة فارغة'); 
+          return; 
+        }
+        checkoutModal.classList.remove('hidden');
+      });
+
+      closeCheckoutModal.addEventListener('click', () => checkoutModal.classList.add('hidden'));
+
+      // Checkout form
+      checkoutForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (!currentUser) { 
+          alert('⚠️ يرجى تسجيل الدخول'); 
+          return; 
+        }
+        
+        const name = document.getElementById('deliveryName').value.trim();
+        const phone = document.getElementById('deliveryPhone').value.trim();
+        const address = document.getElementById('deliveryAddress').value.trim();
+        const region = document.getElementById('deliveryRegion').value.trim();
+        const file = document.getElementById('receiptFile').files[0];
+        
+        if (!name || !phone || !address || !region) {
+          alert('⚠️ يرجى ملء جميع الحقول');
+          return;
+        }
+        if (!file) {
+          alert('⚠️ يرجى رفع إيصال الدفع');
+          return;
+        }
+
+        // Create order
+        const total = cart.reduce((acc, i) => acc + i.price * i.qty, 0);
+        const order = {
+          id: Date.now().toString(36),
+          items: [...cart],
+          total: total,
+          status: 'قيد الانتظار',
+          userName: name,
+          phone: phone,
+          address: address,
+          region: region,
+          receiptUrl: URL.createObjectURL(file),
+          createdAt: new Date().toISOString()
+        };
+
+        // Save order to user
+        if (!currentUser.orders) currentUser.orders = [];
+        currentUser.orders.push(order);
+        updateCurrentUser(currentUser);
+        
+        // Clear cart
+        cart = [];
+        updateCartUI();
+        checkoutModal.classList.add('hidden');
+        
+        // Reset form
+        checkoutForm.reset();
+        
+        alert('✅ تم إرسال الطلب بنجاح! في انتظار الموافقة.');
+        loadUserOrders(currentUser);
+        if (currentUser.email === 'admin@qusai.com') loadAdminOrders();
+      });
+
+      // ============================================
+      // MODAL TOGGLES
+      // ============================================
+      authToggleBtn.addEventListener('click', () => {
+        authModal.classList.toggle('hidden');
+        if (!authModal.classList.contains('hidden') && !currentUser) {
+          // Reset to login view
+          document.querySelector('#authModal form#loginForm').classList.remove('hidden');
+          registerContainer.classList.add('hidden');
+          authModalTitle.innerText = 'تسجيل الدخول';
+          authModalSub.innerText = 'أدخل بياناتك للوصول إلى حسابك';
+        }
+      });
+
+      closeAuthModal.addEventListener('click', () => authModal.classList.add('hidden'));
+
+      showRegisterBtn.addEventListener('click', () => {
+        document.querySelector('#authModal form#loginForm').classList.add('hidden');
+        registerContainer.classList.remove('hidden');
+        authModalTitle.innerText = 'إنشاء حساب';
+        authModalSub.innerText = 'أدخل بياناتك لإنشاء حساب جديد';
+      });
+
+      showLoginBtn.addEventListener('click', () => {
+        registerContainer.classList.add('hidden');
+        document.querySelector('#authModal form#loginForm').classList.remove('hidden');
+        authModalTitle.innerText = 'تسجيل الدخول';
+        authModalSub.innerText = 'أدخل بياناتك للوصول إلى حسابك';
+      });
+
+      cartBtn.addEventListener('click', () => { 
+        cartModal.classList.remove('hidden'); 
+        updateCartUI(); 
+      });
+      
+      closeCartModal.addEventListener('click', () => cartModal.classList.add('hidden'));
+
+      // Close modals on overlay click
+      document.querySelectorAll('.modal-overlay').forEach(el => {
+        el.addEventListener('click', (e) => { 
+          if (e.target === el) el.classList.add('hidden'); 
+        });
+      });
+
+      // Close popup
+      closePopup.addEventListener('click', () => popup.style.display = 'none');
+      setTimeout(() => popup.style.display = 'block', 600);
+
+      // ============================================
+      // INIT
+      // ============================================
+      renderProducts();
+      updateCartUI();
+      
+      // Check if user is already logged in
+      if (currentUser) {
+        updateAuthUI(currentUser);
+      }
+
+      // Add a default admin account if none exists
+      const users = getUsers();
+      if (!users.find(u => u.email === 'admin@qusai.com')) {
+        users.push({
+          name: 'مدير النظام',
+          email: 'admin@qusai.com',
+          password: 'admin123',
+          photoURL: 'https://ui-avatars.com/api/?name=Admin&background=2563eb&color=fff&size=80',
+          orders: [],
+          createdAt: new Date().toISOString()
+        });
+        saveUsers(users);
+        console.log('✅ Admin account created: admin@qusai.com / admin123');
+      }
+
+      console.log('✅ Website loaded successfully!');
+      console.log('📝 To test:');
+      console.log('  - Login: test@test.com / 123456');
+      console.log('  - Register: any new email');
+      console.log('  - Admin: admin@qusai.com / admin123');
+    })();
+  </script>
 </body>
 </html>

@@ -4,106 +4,336 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>قصي موبايل | Qusai Mobile</title>
-  <!-- Tailwind via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Font Awesome 6 (Free) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <!-- Firebase SDK v10+ (modular) -->
   <script type="importmap">
     {
       "imports": {
         "firebase/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js",
         "firebase/auth": "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js",
-        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js",
-        "firebase/storage": "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js"
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"
       }
     }
   </script>
   <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, sans-serif;
-      background: #f8fafc;
-    }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f8fafc; }
     .popup-notice {
-      position: fixed;
-      bottom: 2rem;
-      right: 2rem;
-      z-index: 999;
-      max-width: 380px;
-      background: #1e293b;
-      color: #f1f5f9;
-      padding: 1.25rem 1.8rem;
-      border-radius: 2rem 2rem 2rem 0.5rem;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-      border-right: 6px solid #fbbf24;
-      font-size: 0.95rem;
-      line-height: 1.6;
-      transform: translateX(120%);
-      animation: slideIn 0.7s ease forwards;
+      position: fixed; bottom: 2rem; right: 2rem; z-index: 999; max-width: 380px;
+      background: #1e293b; color: #f1f5f9; padding: 1.25rem 1.8rem;
+      border-radius: 2rem 2rem 2rem 0.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      border-right: 6px solid #fbbf24; font-size: 0.95rem; line-height: 1.6;
+      transform: translateX(120%); animation: slideIn 0.7s ease forwards;
     }
-    @keyframes slideIn {
-      0% { transform: translateX(120%); opacity: 0; }
-      100% { transform: translateX(0); opacity: 1; }
-    }
+    @keyframes slideIn { 0% { transform: translateX(120%); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
     .popup-notice i { color: #fbbf24; margin-left: 8px; }
-    .close-popup {
-      position: absolute; left: 12px; top: 12px;
-      background: transparent; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer;
-    }
+    .close-popup { position: absolute; left: 12px; top: 12px; background: transparent; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; }
     .close-popup:hover { color: #f1f5f9; }
-    .product-card {
-      background: white; border-radius: 1.5rem; padding: 1rem 0.75rem 1.25rem;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.02); border: 1px solid #f0f2f5;
-      transition: all 0.2s ease;
-    }
+    .product-card { background: white; border-radius: 1.5rem; padding: 1rem 0.75rem 1.25rem; box-shadow: 0 4px 16px rgba(0,0,0,0.02); border: 1px solid #f0f2f5; transition: all 0.2s ease; }
     .product-card:hover { transform: translateY(-6px); box-shadow: 0 16px 28px -8px rgba(0,0,0,0.06); border-color: #dbeafe; }
-    .section-title {
-      font-weight: 700; font-size: 1.8rem; border-right: 6px solid #3b82f6; padding-right: 1rem; margin-bottom: 2rem; color: #0f172a;
-    }
+    .section-title { font-weight: 700; font-size: 1.8rem; border-right: 6px solid #3b82f6; padding-right: 1rem; margin-bottom: 2rem; color: #0f172a; }
     .brand-badge { background: #2563eb; color: white; padding: 0.2rem 1rem; border-radius: 30px; font-size: 0.7rem; }
-    .btn-primary {
-      background: #2563eb; color: white; padding: 0.5rem 1.25rem; border-radius: 40px; font-weight: 500;
-      transition: 0.2s; border: none; cursor: pointer; font-size: 0.9rem; box-shadow: 0 4px 8px rgba(37,99,235,0.2);
-    }
+    .btn-primary { background: #2563eb; color: white; padding: 0.5rem 1.25rem; border-radius: 40px; font-weight: 500; transition: 0.2s; border: none; cursor: pointer; font-size: 0.9rem; box-shadow: 0 4px 8px rgba(37,99,235,0.2); }
     .btn-primary:hover { background: #1d4ed8; transform: scale(0.97); }
     .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-    .btn-success {
-      background: #22c55e; color: white; padding: 0.5rem 1.25rem; border-radius: 40px; font-weight: 500;
-      transition: 0.2s; border: none; cursor: pointer; font-size: 0.9rem;
-    }
+    .btn-success { background: #22c55e; color: white; padding: 0.5rem 1.25rem; border-radius: 40px; font-weight: 500; transition: 0.2s; border: none; cursor: pointer; font-size: 0.9rem; }
     .btn-success:hover { background: #16a34a; transform: scale(0.97); }
     .btn-outline { background: transparent; border: 1px solid #cbd5e1; padding: 0.4rem 1.2rem; border-radius: 40px; font-weight: 500; transition: 0.2s; cursor: pointer; }
     .btn-outline:hover { background: #f1f5f9; border-color: #94a3b8; }
+    .btn-whatsapp { background: #25D366; color: white; padding: 0.5rem 1.25rem; border-radius: 40px; font-weight: 500; transition: 0.2s; border: none; cursor: pointer; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-whatsapp:hover { background: #1ebe5c; transform: scale(0.97); }
     .modal-overlay { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); }
     .profile-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #e2e8f0; }
     .profile-img-lg { width: 100px; height: 100px; }
     .cart-badge { background: #ef4444; color: white; border-radius: 30px; padding: 0.1rem 0.6rem; font-size: 0.7rem; margin-right: 4px; }
     .admin-table td, .admin-table th { padding: 0.75rem 0.5rem; border-bottom: 1px solid #e2e8f0; }
     .admin-table tr:hover { background: #f1f5f9; }
-    .admin-table .status-pending { background: #fef3c7; color: #92400e; }
-    .admin-table .status-approved { background: #d1fae5; color: #065f46; }
-    .admin-table .status-rejected { background: #fee2e2; color: #991b1b; }
-    .receipt-thumbnail {
-      width: 50px;
-      height: 50px;
-      object-fit: cover;
-      border-radius: 8px;
-      cursor: pointer;
-      border: 2px solid #e2e8f0;
-      transition: 0.2s;
-    }
-    .receipt-thumbnail:hover { transform: scale(1.1); border-color: #3b82f6; }
-    .order-badge {
-      display: inline-block;
-      padding: 0.2rem 0.8rem;
-      border-radius: 20px;
-      font-size: 0.7rem;
+    .order-badge { display: inline-block; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
+    .whatsapp-float {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: #25D366;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 50px;
+      text-decoration: none;
       font-weight: 600;
+      transition: 0.2s;
+      margin-top: 10px;
     }
+    .whatsapp-float:hover { background: #1ebe5c; transform: scale(1.02); }
   </style>
 </head>
 <body>
 
+  <!-- POPUP NOTIFICATION -->
+  <div id="popupNotice" class="popup-notice">
+    <button class="close-popup" id="closePopupBtn"><i class="fas fa-times"></i></button>
+    <i class="fas fa-truck"></i> ملاحظة: سعر التوصيل يختلف حسب المنطقة لأنه يتم عن طريق شركة شحن خارجية.
+  </div>
+
+  <!-- NAVBAR -->
+  <nav class="bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-100 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl font-bold text-blue-700">قصي موبايل</span>
+          <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">Qusai</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <button id="cartBtn" class="relative text-gray-700 hover:text-blue-600 text-xl">
+            <i class="fas fa-shopping-cart"></i>
+            <span id="cartCount" class="cart-badge absolute -top-2 -right-3">0</span>
+          </button>
+          <button id="authToggleBtn" class="btn-primary text-sm px-4 py-1.5"><i class="fas fa-user-circle ml-1"></i> دخول</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- HERO -->
+    <div class="bg-gradient-to-l from-blue-50 to-indigo-50 rounded-3xl p-8 mb-12 shadow-sm border border-blue-100">
+      <h1 class="text-3xl md:text-4xl font-extrabold text-gray-800">📱 قصي موبايل – أحدث الهواتف والإكسسوارات</h1>
+      <p class="text-gray-600 mt-2 text-lg">أفضل الأسعار في الأردن مع ضمان الجودة</p>
+    </div>
+
+    <!-- AUTH MODAL -->
+    <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center modal-overlay hidden">
+      <div class="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl relative mx-4 max-h-[90vh] overflow-y-auto">
+        <button id="closeAuthModal" class="absolute left-4 top-4 text-gray-400 hover:text-gray-700 text-xl"><i class="fas fa-times"></i></button>
+        <div class="text-center mb-6">
+          <h3 class="text-2xl font-bold text-gray-800" id="authModalTitle">تسجيل الدخول</h3>
+          <p class="text-sm text-gray-500" id="authModalSub">أدخل بياناتك للوصول إلى حسابك</p>
+        </div>
+        <!-- login -->
+        <form id="loginForm">
+          <div class="mb-4">
+            <label class="block text-gray-700 text-sm mb-1">البريد الإلكتروني</label>
+            <input type="email" id="loginEmail" class="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-300 outline-none" placeholder="example@mail.com">
+          </div>
+          <div class="mb-4">
+            <label class="block text-gray-700 text-sm mb-1">كلمة المرور</label>
+            <input type="password" id="loginPassword" class="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-300 outline-none" placeholder="••••••••">
+          </div>
+          <button type="submit" class="w-full btn-primary py-2.5 text-base"><i class="fas fa-sign-in-alt ml-2"></i> دخول</button>
+        </form>
+        <div class="mt-4 text-center">
+          <span class="text-sm text-gray-500">ليس لديك حساب؟</span>
+          <button id="showRegisterBtn" class="text-blue-600 font-semibold mr-1">إنشاء حساب</button>
+        </div>
+        <!-- register -->
+        <div id="registerFormContainer" class="hidden mt-4 border-t pt-4">
+          <h4 class="text-lg font-bold text-gray-700 mb-2">إنشاء حساب جديد</h4>
+          <form id="registerForm">
+            <div class="mb-3">
+              <label class="block text-sm text-gray-700">الاسم</label>
+              <input type="text" id="regName" class="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-300 outline-none" placeholder="أحمد">
+            </div>
+            <div class="mb-3">
+              <label class="block text-sm text-gray-700">البريد الإلكتروني</label>
+              <input type="email" id="regEmail" class="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-300 outline-none" placeholder="new@mail.com">
+            </div>
+            <div class="mb-3">
+              <label class="block text-sm text-gray-700">كلمة المرور</label>
+              <input type="password" id="regPassword" class="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-300 outline-none" placeholder="••••••••">
+            </div>
+            <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-xl font-medium"><i class="fas fa-user-plus ml-2"></i> إنشاء حساب</button>
+          </form>
+          <button id="showLoginBtn" class="mt-2 text-sm text-blue-600">→ العودة لتسجيل الدخول</button>
+        </div>
+        <!-- profile -->
+        <div id="profileSection" class="hidden mt-4 border-t pt-4">
+          <div class="flex items-center gap-4 mb-3">
+            <img id="profileImage" src="https://ui-avatars.com/api/?name=User&background=2563eb&color=fff&size=80" alt="profile" class="profile-img profile-img-lg">
+            <div>
+              <h4 class="font-bold text-gray-800" id="profileName">مستخدم</h4>
+              <p class="text-sm text-gray-500" id="profileEmail">user@mail.com</p>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2 mb-3">
+            <button id="changePicBtn" class="btn-outline text-sm"><i class="fas fa-camera"></i> تغيير الصورة</button>
+            <button id="editPasswordBtn" class="btn-outline text-sm"><i class="fas fa-key"></i> تعديل كلمة السر</button>
+          </div>
+          <div id="passwordEditArea" class="hidden mt-2 bg-gray-50 p-3 rounded-xl">
+            <input type="password" id="newPasswordInput" class="w-full border border-gray-300 rounded-xl px-3 py-1.5 text-sm" placeholder="كلمة سر جديدة">
+            <button id="savePasswordBtn" class="mt-2 btn-primary text-sm py-1 px-4">حفظ</button>
+          </div>
+          <div class="mt-3">
+            <h5 class="font-semibold text-gray-700">📦 طلباتي المحفوظة</h5>
+            <ul id="ordersList" class="text-sm text-gray-600 list-disc list-inside">
+              <li>لا توجد طلبات</li>
+            </ul>
+          </div>
+          <button id="logoutBtn" class="mt-3 text-red-500 text-sm border border-red-200 px-4 py-1 rounded-full hover:bg-red-50"><i class="fas fa-sign-out-alt"></i> تسجيل خروج</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CART MODAL -->
+    <div id="cartModal" class="fixed inset-0 z-50 flex items-center justify-center modal-overlay hidden">
+      <div class="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl relative mx-4">
+        <button id="closeCartModal" class="absolute left-4 top-4 text-gray-400 hover:text-gray-700 text-xl"><i class="fas fa-times"></i></button>
+        <h3 class="text-xl font-bold mb-4">🛒 سلة التسوق</h3>
+        <div id="cartItems" class="max-h-64 overflow-y-auto space-y-2 text-sm"></div>
+        <div class="border-t pt-3 mt-3 flex justify-between font-bold">
+          <span>المجموع:</span>
+          <span id="cartTotal">0 JOD</span>
+        </div>
+        <button id="checkoutBtn" class="w-full mt-4 btn-primary py-2.5 text-base">إتمام الشراء</button>
+        <p class="text-xs text-gray-400 mt-2 text-center">(تسجيل الدخول مطلوب)</p>
+      </div>
+    </div>
+
+    <!-- CHECKOUT MODAL (بدون صورة - مع رسالة تحويل وواتساب) -->
+    <div id="checkoutModal" class="fixed inset-0 z-50 flex items-center justify-center modal-overlay hidden">
+      <div class="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl relative mx-4 max-h-[90vh] overflow-y-auto">
+        <button id="closeCheckoutModal" class="absolute left-4 top-4 text-gray-400 hover:text-gray-700 text-xl"><i class="fas fa-times"></i></button>
+        <h3 class="text-xl font-bold mb-4">📋 تفاصيل الطلب</h3>
+        <form id="checkoutForm">
+          <div class="mb-3">
+            <label class="block text-sm font-medium text-gray-700 mb-1">الاسم الكامل</label>
+            <input type="text" id="deliveryName" class="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-300 outline-none" required placeholder="أدخل اسمك الكامل">
+          </div>
+          <div class="mb-3">
+            <label class="block text-sm font-medium text-gray-700 mb-1">رقم الهاتف</label>
+            <input type="tel" id="deliveryPhone" class="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-300 outline-none" required placeholder="079XXXXXXXX">
+          </div>
+          <div class="mb-3">
+            <label class="block text-sm font-medium text-gray-700 mb-1">العنوان</label>
+            <input type="text" id="deliveryAddress" class="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-300 outline-none" required placeholder="العنوان بالتفصيل">
+          </div>
+          <div class="mb-3">
+            <label class="block text-sm font-medium text-gray-700 mb-1">المنطقة</label>
+            <input type="text" id="deliveryRegion" class="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-300 outline-none" required placeholder="مثال: عمان - تلاع العلي">
+          </div>
+          
+          <!-- بدل رفع الصورة: رسالة تحويل -->
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">💳 رسالة التحويل</label>
+            <textarea id="transferMessage" rows="3" class="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-300 outline-none" placeholder="الصق هنا رسالة التحويل البنكي أو رقم الحوالة..."></textarea>
+            <p class="text-xs text-gray-400 mt-1">⚠️ يرجى كتابة تفاصيل التحويل (البنك، المبلغ، رقم الحوالة)</p>
+          </div>
+
+          <!-- زر واتساب -->
+          <div class="mb-4 p-3 bg-green-50 rounded-xl border border-green-200 text-center">
+            <p class="text-sm text-gray-700 mb-2">📱 للتواصل المباشر:</p>
+            <a href="https://wa.me/962771934703" target="_blank" class="btn-whatsapp">
+              <i class="fab fa-whatsapp fa-lg"></i> تواصل معنا على واتساب
+            </a>
+            <p class="text-xs text-gray-400 mt-2">رقم واتساب: 0771934703</p>
+          </div>
+
+          <button type="submit" id="submitOrderBtn" class="w-full btn-success py-2.5 text-base">
+            <i class="fas fa-paper-plane ml-2"></i> إرسال الطلب
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ADMIN DASHBOARD -->
+    <div id="adminPanel" class="hidden mt-8 bg-white rounded-3xl p-6 shadow-md border border-gray-200">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold text-gray-800"><i class="fas fa-user-shield text-blue-600"></i> لوحة تحكم المدير</h2>
+        <span class="text-sm text-gray-500" id="adminOrderCount">0 طلب</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="admin-table w-full text-sm">
+          <thead class="bg-gray-100">
+            <tr>
+              <th>#</th>
+              <th>العميل</th>
+              <th>الهاتف</th>
+              <th>العنوان</th>
+              <th>المنطقة</th>
+              <th>الطلب</th>
+              <th>المجموع</th>
+              <th>رسالة التحويل</th>
+              <th>الحالة</th>
+              <th>إجراء</th>
+            </tr>
+          </thead>
+          <tbody id="adminOrdersBody">
+            <tr><td colspan="10" class="text-center text-gray-400 py-4">جاري تحميل الطلبات...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PRODUCT SECTIONS -->
+    <section class="mb-16">
+      <h2 class="section-title">✨ إكسسوارات WiWU</h2>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5" id="wiwuGrid"></div>
+    </section>
+
+    <section class="mb-16">
+      <h2 class="section-title">📱 هواتف قصي موبايل</h2>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5" id="phoneGrid"></div>
+    </section>
+
+  </main>
+
+  <footer class="bg-white border-t border-gray-200 py-6 text-center text-sm text-gray-500">
+    <p>© 2026 قصي موبايل – جميع الحقوق محفوظة</p>
+  </footer>
+
+  <script type="module">
+    // ============================================
+    // FIREBASE IMPORTS & CONFIG
+    // ============================================
+    import { initializeApp } from "firebase/app";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updatePassword, updateProfile, onAuthStateChanged, signOut } from "firebase/auth";
+    import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, where, onSnapshot, serverTimestamp, orderBy } from "firebase/firestore";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC_5CP_XIeTqEaqCaxQyDmr_uTM8l9ZUCw",
+      authDomain: "qusai-mobile.firebaseapp.com",
+      projectId: "qusai-mobile",
+      storageBucket: "qusai-mobile.firebasestorage.app",
+      messagingSenderId: "317833751854",
+      appId: "1:317833751854:web:c139f4c823cd13d4931ebf",
+      measurementId: "G-81317PB56J"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // ============================================
+    // PRODUCT DATA
+    // ============================================
+    const wiwuProducts = [
+      { id: 'w1', name: 'سماعة بلوتوث TWS', price: 29, img: 'https://placehold.co/300x300/eee/bbb?text=WiWU+TWS' },
+      { id: 'w2', name: 'شاحن سريع 65W', price: 18, img: 'https://placehold.co/300x300/eee/bbb?text=WiWU+Charger' },
+      { id: 'w3', name: 'جراب حماية سيليكون', price: 12, img: 'https://placehold.co/300x300/eee/bbb?text=WiWU+Case' },
+      { id: 'w4', name: 'كابل USB-C 2M', price: 9, img: 'https://placehold.co/300x300/eee/bbb?text=WiWU+Cable' },
+      { id: 'w5', name: 'حامل هاتف سيارة', price: 22, img: 'https://placehold.co/300x300/eee/bbb?text=WiWU+Holder' },
+      { id: 'w6', name: 'سماعة أذن لاسلكية', price: 35, img: 'https://placehold.co/300x300/eee/bbb?text=WiWU+Earbuds' },
+      { id: 'w7', name: 'باور بانك 10000mAh', price: 27, img: 'https://placehold.co/300x300/eee/bbb?text=WiWU+Power' },
+      { id: 'w8', name: 'عدسة تصوير واسعة', price: 16, img: 'https://placehold.co/300x300/eee/bbb?text=WiWU+Lens' },
+    ];
+
+    const phoneData = [
+      { id: 'p1', name: 'HONOR Magic V5 512GB', price: 1301, brand: 'HONOR' },
+      { id: 'p2', name: 'HONOR Magic 8 Pro 512GB', price: 801, brand: 'HONOR' },
+      { id: 'p3', name: 'HONOR Magic 7 Pro 512GB', price: 751, brand: 'HONOR' },
+      { id: 'p4', name: 'HONOR 400 PRO 512GB', price: 461, brand: 'HONOR' },
+      { id: 'p5', name: 'HONOR 400 12-512GB', price: 301, brand: 'HONOR' },
+      { id: 'p6', name: 'HONOR 400 12-256GB', price: 271, brand: 'HONOR' },
+      { id: 'p7', name: 'HONOR X9d 12-256GB', price: 281, brand: 'HONOR' },
+      { id: 'p8', name: 'HONOR X9d 8-256GB', price: 251, brand: 'HONOR' },
+      { id: 'p9', name: 'HONOR X9c 12-256GB', price: 241, brand: 'HONOR' },
+      { id: 'p10', name: 'HONOR 600 Lite 8-256GB', price: 241, brand: 'HONOR' },
+      { id: 'p11', name: 'HONOR 400 Lite 5G', price: 171, brand: 'HONOR' },
+      { id: 'p12', name: 'HONOR X8d 8-512GB', price: 201, brand: 'HONOR' },
+      { id: 'p13', name: 'HONOR X8d 8-256GB', price: 191, brand: 'HONOR' },
+      { id: 'p14', name: 'HONOR X8c 8-512GB', price: 171, brand: 'HONOR' },
+      { id: 'p15', name: 'HONOR X8c 8-256GB', price: 151, brand: 'HONOR' },
+      { id: 'p16', name: 'HONOR X7d 5G', price: 146, brand: 'HONOR' },
+      { id: 'p17', name: 'HONOR X7d 4G', price: 131, brand: 'HONOR' },
+      { id: 'p18', n
   <!-- POPUP NOTIFICATION -->
   <div id="popupNotice" class="popup-notice">
     <button class="close-popup" id="closePopupBtn"><i class="fas fa-times"></i></button>
